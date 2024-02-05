@@ -24,6 +24,7 @@ def select_new_first(driver, sort_comments_btn_xpath):
 
 
 import time
+import csv
 from collections import defaultdict
 
 from selenium import webdriver
@@ -38,10 +39,10 @@ from selenium.webdriver.support import expected_conditions as EC
 
 from bs4 import BeautifulSoup as bs
 
-url = 'https://www.youtube.com/watch?v=jO6qQDNa2UY'
+url = "https://www.youtube.com/watch?v=bga930EaMMk"
 # select if you want newest comments first + other options
-new_first = True
-no_of_comments = 100
+new_first = False
+no_of_comments = 5
 
 # initializing the selenium browser
 options = Options()
@@ -89,7 +90,7 @@ height = get_height(driver)
 
 while (prev_height != height) and (len(comments) < no_of_comments):
     scroll_to_bottom(driver, height)
-    time.sleep(2)
+    time.sleep(3)
     prev_height = height
     height = get_height(driver)
 
@@ -108,18 +109,22 @@ while (prev_height != height) and (len(comments) < no_of_comments):
         # comments are seperated on the basis of emojis, links and text so add each separately
         all_comment_parts = comment_data.select_one("#content-text").contents
         comment = ""
+
         for comment_part in all_comment_parts:
             if comment_part.name == "img":
                 comment = comment + comment_part["alt"] + " "
-            elif comment_part.name == "a" or comment_part.name == "span":
-                comment = comment + comment_part.text.strip()
+            elif comment_part.name == "a":
+                comment = comment + comment_part.text.strip() + " "
+            elif comment_part.name == "span":
+                comment = comment + comment_part.text.strip() + " "
+            else:
+                comment = comment + comment_part.text.strip() + " "
 
         published_time = comment_data.select_one(".published-time-text").text.strip()
         likes = comment_data.select_one("#vote-count-middle").text.strip()
 
         if (len(reply_data) > 0):
-            replies = reply_data[0].select_one("span",
-                                               class_="yt-core-attributed-string--white-space-no-wrap").text.strip()
+            replies = reply_data[0].select_one("span", class_="yt-core-attributed-string--white-space-no-wrap").text.strip()
         else:
             replies = "0 replies"
 
@@ -140,6 +145,32 @@ while (prev_height != height) and (len(comments) < no_of_comments):
     time.sleep(2)
 
 print(len(comments))
-print(comments)
+for comment in comments.values():
+    print(comment)
+    print("=================")
 
 driver.quit
+
+headers = ['username', 'comment', 'date', 'replies', 'likes']
+file = "yt_comments.csv"
+print("ppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp")
+
+with open(file, 'w', encoding="utf-8", newline='') as csvfile:
+    writer = csv.writer(csvfile, quoting=csv.QUOTE_ALL)
+    writer.writerow(headers)
+    for comment_box in comments.items():
+        write_list = []
+        i = 1
+        print(len(comment_box))
+        while i < len(comment_box):
+            for parts in comment_box[i]:
+                write_list.append(comment_box[0])
+                write_list.append(parts[0])
+                write_list.append(parts[1])
+                write_list.append(parts[2])
+                write_list.append(parts[3])
+                print(write_list)
+                writer.writerow(write_list)
+                write_list = []
+            i = i + 1
+
